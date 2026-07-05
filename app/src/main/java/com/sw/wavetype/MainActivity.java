@@ -56,7 +56,7 @@ public class MainActivity extends Activity {
         title.setGravity(Gravity.CENTER);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Liquid Glass Keyboard\nv0.1.1 First Polish");
+        subtitle.setText("Liquid Glass Keyboard\nv0.1.2 Numbers & Symbols");
         subtitle.setTextColor(0xCCFFFFFF);
         subtitle.setTextSize(16);
         subtitle.setGravity(Gravity.CENTER);
@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
         });
 
         TextView info = new TextView(this);
-        info.setText("Base aprovada: teclado funcional, glass escuro, teclas arredondadas e fluxo APK automático.");
+        info.setText("Base atual: teclado funcional com modo ABC, números e símbolos.");
         info.setTextColor(0x99FFFFFF);
         info.setTextSize(13);
         info.setGravity(Gravity.CENTER);

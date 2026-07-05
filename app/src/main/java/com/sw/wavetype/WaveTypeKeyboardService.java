@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 public class WaveTypeKeyboardService extends InputMethodService {
     private boolean caps = false;
+    private boolean symbolsMode = false;
     private LinearLayout keyboardRoot;
 
     private int dp(float value) {
@@ -36,13 +37,27 @@ public class WaveTypeKeyboardService extends InputMethodService {
         keyboardRoot.setPadding(dp(8), dp(7), dp(8), dp(8));
         keyboardRoot.setBackground(rounded(0x5A0B1018, 28, 0x55FFFFFF));
 
-        addTopBar();
-        addLetterRow("qwertyuiop", 0);
-        addLetterRow("asdfghjkl", 10);
-        addThirdRow();
-        addBottomRow();
-
+        renderKeyboard();
         return keyboardRoot;
+    }
+
+    private void renderKeyboard() {
+        if (keyboardRoot == null) return;
+
+        keyboardRoot.removeAllViews();
+        addTopBar();
+
+        if (symbolsMode) {
+            addSymbolRow(new String[]{"1","2","3","4","5","6","7","8","9","0"}, 0);
+            addSymbolRow(new String[]{"@","#","R$","&","*","(",")","-","+"}, 8);
+            addSymbolRowWithActions();
+            addSymbolBottomRow();
+        } else {
+            addLetterRow("qwertyuiop", 0);
+            addLetterRow("asdfghjkl", 10);
+            addThirdLetterRow();
+            addLetterBottomRow();
+        }
     }
 
     private void addTopBar() {
@@ -71,7 +86,6 @@ public class WaveTypeKeyboardService extends InputMethodService {
 
     private TextView toolKey(String label) {
         TextView key = baseKey(label, 12, 0x241E88E5, 0x33FFFFFF, true);
-        key.setTypeface(Typeface.DEFAULT_BOLD);
         key.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             Toast.makeText(this, label + " entra nas próximas versões", Toast.LENGTH_SHORT).show();
@@ -90,14 +104,13 @@ public class WaveTypeKeyboardService extends InputMethodService {
         row.setPadding(dp(sidePadding), 0, dp(sidePadding), 0);
 
         for (int i = 0; i < letters.length(); i++) {
-            String key = String.valueOf(letters.charAt(i));
-            row.addView(letterKey(key));
+            row.addView(letterKey(String.valueOf(letters.charAt(i))));
         }
 
         keyboardRoot.addView(row);
     }
 
-    private void addThirdRow() {
+    private void addThirdLetterRow() {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER);
@@ -106,7 +119,7 @@ public class WaveTypeKeyboardService extends InputMethodService {
         shift.setOnClickListener(v -> {
             caps = !caps;
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-            refreshKeyboard();
+            renderKeyboard();
         });
         row.addView(shift);
 
@@ -115,32 +128,24 @@ public class WaveTypeKeyboardService extends InputMethodService {
             row.addView(letterKey(String.valueOf(letters.charAt(i))));
         }
 
-        TextView backspace = actionKey("⌫", 1.28f);
-        backspace.setTextSize(19);
-        backspace.setOnClickListener(v -> {
-            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-            InputConnection ic = getCurrentInputConnection();
-            if (ic != null) ic.deleteSurroundingText(1, 0);
-        });
-        row.addView(backspace);
-
+        row.addView(backspaceKey(1.28f));
         keyboardRoot.addView(row);
     }
 
-    private void addBottomRow() {
+    private void addLetterBottomRow() {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER);
 
         TextView symbols = actionKey("123", 1.35f);
         symbols.setOnClickListener(v -> {
+            symbolsMode = true;
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-            Toast.makeText(this, "Números e símbolos entram na v0.1.2", Toast.LENGTH_SHORT).show();
+            renderKeyboard();
         });
         row.addView(symbols);
 
-        TextView comma = letterKey(",");
-        row.addView(comma);
+        row.addView(letterKey(","));
 
         TextView space = actionKey("Espaço", 4.25f);
         space.setTextSize(15);
@@ -150,21 +155,71 @@ public class WaveTypeKeyboardService extends InputMethodService {
         });
         row.addView(space);
 
-        TextView dot = letterKey(".");
-        row.addView(dot);
+        row.addView(letterKey("."));
 
-        TextView enter = actionKey("Enter", 1.35f);
-        enter.setTextSize(13);
-        enter.setOnClickListener(v -> {
+        row.addView(enterKey(1.35f, "Enter"));
+        keyboardRoot.addView(row);
+    }
+
+    private void addSymbolRow(String[] labels, int sidePadding) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+        row.setPadding(dp(sidePadding), 0, dp(sidePadding), 0);
+
+        for (String label : labels) {
+            row.addView(symbolKey(label));
+        }
+
+        keyboardRoot.addView(row);
+    }
+
+    private void addSymbolRowWithActions() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+
+        TextView abc = actionKey("ABC", 1.28f);
+        abc.setOnClickListener(v -> {
+            symbolsMode = false;
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
-            InputConnection ic = getCurrentInputConnection();
-            if (ic != null) {
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
-                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER));
-            }
+            renderKeyboard();
         });
-        row.addView(enter);
+        row.addView(abc);
 
+        String[] labels = new String[]{"!","?",":",";","/","\\","'","\""};
+        for (String label : labels) {
+            row.addView(symbolKey(label));
+        }
+
+        row.addView(backspaceKey(1.28f));
+        keyboardRoot.addView(row);
+    }
+
+    private void addSymbolBottomRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER);
+
+        String[] left = new String[]{"[","]","{","}"};
+        for (String label : left) {
+            row.addView(symbolKey(label));
+        }
+
+        TextView space = actionKey("Espaço", 3.2f);
+        space.setTextSize(15);
+        space.setOnClickListener(v -> {
+            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            commit(" ");
+        });
+        row.addView(space);
+
+        String[] right = new String[]{"%","_","="};
+        for (String label : right) {
+            row.addView(symbolKey(label));
+        }
+
+        row.addView(enterKey(1.35f, "Enter"));
         keyboardRoot.addView(row);
     }
 
@@ -182,6 +237,19 @@ public class WaveTypeKeyboardService extends InputMethodService {
         return key;
     }
 
+    private TextView symbolKey(String label) {
+        TextView key = baseKey(label, label.length() > 1 ? 14 : 18, 0x2F101821, 0x33FFFFFF, false);
+        key.setOnClickListener(v -> {
+            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            commit(label);
+        });
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(50), 1f);
+        params.setMargins(dp(3), dp(4), dp(3), dp(4));
+        key.setLayoutParams(params);
+        return key;
+    }
+
     private TextView actionKey(String label, float weight) {
         TextView key = baseKey(label, 14, 0x4A0D3A5A, 0x44FFFFFF, true);
 
@@ -189,6 +257,31 @@ public class WaveTypeKeyboardService extends InputMethodService {
         params.setMargins(dp(3), dp(4), dp(3), dp(4));
         key.setLayoutParams(params);
         return key;
+    }
+
+    private TextView backspaceKey(float weight) {
+        TextView backspace = actionKey("⌫", weight);
+        backspace.setTextSize(19);
+        backspace.setOnClickListener(v -> {
+            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null) ic.deleteSurroundingText(1, 0);
+        });
+        return backspace;
+    }
+
+    private TextView enterKey(float weight, String label) {
+        TextView enter = actionKey(label, weight);
+        enter.setTextSize(13);
+        enter.setOnClickListener(v -> {
+            v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+            InputConnection ic = getCurrentInputConnection();
+            if (ic != null) {
+                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER));
+                ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER));
+            }
+        });
+        return enter;
     }
 
     private TextView baseKey(String label, int textSize, int color, int stroke, boolean bold) {
@@ -209,16 +302,6 @@ public class WaveTypeKeyboardService extends InputMethodService {
         }
 
         return key;
-    }
-
-    private void refreshKeyboard() {
-        if (keyboardRoot == null) return;
-        keyboardRoot.removeAllViews();
-        addTopBar();
-        addLetterRow("qwertyuiop", 0);
-        addLetterRow("asdfghjkl", 10);
-        addThirdRow();
-        addBottomRow();
     }
 
     private void commit(String text) {
