@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">WaveType</string>
+    <string name="ime_name">WaveType Keyboard</string>
+    <string name="ime_subtype_label">Português Brasil</string>
+</resources>

@@ -1,0 +1,13 @@
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0B0F14</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">#90CAF9</item>
+    </style>
+
+    <style name="ImeTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:colorAccent">#90CAF9</item>
+    </style>
+</resources>
