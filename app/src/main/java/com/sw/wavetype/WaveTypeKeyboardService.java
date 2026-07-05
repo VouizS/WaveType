@@ -1,22 +1,48 @@
 package com.sw.wavetype;
 
-import android.inputmethodservice.InputMethodService;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.inputmethodservice.InputMethodService;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class WaveTypeKeyboardService extends InputMethodService {
+    private static final String PREFS_NAME = "wavetype_settings";
+    private static final String KEY_HEIGHT = "height_mode";
+    private static final String KEY_TRANSPARENCY = "transparency_mode";
+
+    private static final String HEIGHT_LOW = "LOW";
+    private static final String HEIGHT_MEDIUM = "MEDIUM";
+    private static final String HEIGHT_HIGH = "HIGH";
+
+    private static final String TRANS_LOW = "LOW";
+    private static final String TRANS_MEDIUM = "MEDIUM";
+    private static final String TRANS_HIGH = "HIGH";
+
     private boolean caps = false;
     private boolean symbolsMode = false;
     private LinearLayout keyboardRoot;
+
+    private String heightMode = HEIGHT_MEDIUM;
+    private String transparencyMode = TRANS_MEDIUM;
+
+    private int keyHeightDp = 50;
+    private int topHeightDp = 38;
+    private int rootPaddingDp = 8;
+
+    private int rootColor = 0x5A0B1018;
+    private int letterColor = 0x2F101821;
+    private int actionColor = 0x4A0D3A5A;
+    private int toolColor = 0x241E88E5;
 
     private int dp(float value) {
         return (int) (value * getResources().getDisplayMetrics().density);
@@ -30,15 +56,66 @@ public class WaveTypeKeyboardService extends InputMethodService {
         return drawable;
     }
 
+    private void loadSettings() {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        heightMode = prefs.getString(KEY_HEIGHT, HEIGHT_MEDIUM);
+        transparencyMode = prefs.getString(KEY_TRANSPARENCY, TRANS_MEDIUM);
+
+        if (HEIGHT_LOW.equals(heightMode)) {
+            keyHeightDp = 44;
+            topHeightDp = 34;
+            rootPaddingDp = 6;
+        } else if (HEIGHT_HIGH.equals(heightMode)) {
+            keyHeightDp = 56;
+            topHeightDp = 42;
+            rootPaddingDp = 9;
+        } else {
+            keyHeightDp = 50;
+            topHeightDp = 38;
+            rootPaddingDp = 8;
+        }
+
+        if (TRANS_LOW.equals(transparencyMode)) {
+            rootColor = 0x760B1018;
+            letterColor = 0x46101821;
+            actionColor = 0x5F0D3A5A;
+            toolColor = 0x351E88E5;
+        } else if (TRANS_HIGH.equals(transparencyMode)) {
+            rootColor = 0x3E0B1018;
+            letterColor = 0x23101821;
+            actionColor = 0x350D3A5A;
+            toolColor = 0x1D1E88E5;
+        } else {
+            rootColor = 0x5A0B1018;
+            letterColor = 0x2F101821;
+            actionColor = 0x4A0D3A5A;
+            toolColor = 0x241E88E5;
+        }
+    }
+
     @Override
     public View onCreateInputView() {
+        loadSettings();
+
         keyboardRoot = new LinearLayout(this);
         keyboardRoot.setOrientation(LinearLayout.VERTICAL);
-        keyboardRoot.setPadding(dp(8), dp(7), dp(8), dp(8));
-        keyboardRoot.setBackground(rounded(0x5A0B1018, 28, 0x55FFFFFF));
+        keyboardRoot.setPadding(dp(rootPaddingDp), dp(Math.max(5, rootPaddingDp - 1)), dp(rootPaddingDp), dp(rootPaddingDp));
+        keyboardRoot.setBackground(rounded(rootColor, 28, 0x55FFFFFF));
 
         renderKeyboard();
         return keyboardRoot;
+    }
+
+    @Override
+    public void onStartInputView(EditorInfo info, boolean restarting) {
+        super.onStartInputView(info, restarting);
+        loadSettings();
+
+        if (keyboardRoot != null) {
+            keyboardRoot.setPadding(dp(rootPaddingDp), dp(Math.max(5, rootPaddingDp - 1)), dp(rootPaddingDp), dp(rootPaddingDp));
+            keyboardRoot.setBackground(rounded(rootColor, 28, 0x55FFFFFF));
+            renderKeyboard();
+        }
     }
 
     private void renderKeyboard() {
@@ -73,7 +150,7 @@ public class WaveTypeKeyboardService extends InputMethodService {
         brand.setTypeface(Typeface.DEFAULT_BOLD);
         brand.setGravity(Gravity.CENTER_VERTICAL);
 
-        LinearLayout.LayoutParams brandParams = new LinearLayout.LayoutParams(0, dp(38), 1f);
+        LinearLayout.LayoutParams brandParams = new LinearLayout.LayoutParams(0, dp(topHeightDp), 1f);
         top.addView(brand, brandParams);
 
         top.addView(toolKey("Mic"));
@@ -85,13 +162,13 @@ public class WaveTypeKeyboardService extends InputMethodService {
     }
 
     private TextView toolKey(String label) {
-        TextView key = baseKey(label, 12, 0x241E88E5, 0x33FFFFFF, true);
+        TextView key = baseKey(label, 12, toolColor, 0x33FFFFFF, true);
         key.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             Toast.makeText(this, label + " entra nas próximas versões", Toast.LENGTH_SHORT).show();
         });
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(54), dp(38));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(54), dp(topHeightDp));
         params.setMargins(dp(3), 0, dp(3), 0);
         key.setLayoutParams(params);
         return key;
@@ -156,8 +233,8 @@ public class WaveTypeKeyboardService extends InputMethodService {
         row.addView(space);
 
         row.addView(letterKey("."));
-
         row.addView(enterKey(1.35f, "Enter"));
+
         keyboardRoot.addView(row);
     }
 
@@ -224,36 +301,36 @@ public class WaveTypeKeyboardService extends InputMethodService {
     }
 
     private TextView letterKey(String label) {
-        TextView key = baseKey(label, 18, 0x2F101821, 0x33FFFFFF, false);
+        TextView key = baseKey(label, 18, letterColor, 0x33FFFFFF, false);
         key.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             String out = caps ? label.toUpperCase() : label;
             commit(out);
         });
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(50), 1f);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(keyHeightDp), 1f);
         params.setMargins(dp(3), dp(4), dp(3), dp(4));
         key.setLayoutParams(params);
         return key;
     }
 
     private TextView symbolKey(String label) {
-        TextView key = baseKey(label, label.length() > 1 ? 14 : 18, 0x2F101821, 0x33FFFFFF, false);
+        TextView key = baseKey(label, label.length() > 1 ? 14 : 18, letterColor, 0x33FFFFFF, false);
         key.setOnClickListener(v -> {
             v.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
             commit(label);
         });
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(50), 1f);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(keyHeightDp), 1f);
         params.setMargins(dp(3), dp(4), dp(3), dp(4));
         key.setLayoutParams(params);
         return key;
     }
 
     private TextView actionKey(String label, float weight) {
-        TextView key = baseKey(label, 14, 0x4A0D3A5A, 0x44FFFFFF, true);
+        TextView key = baseKey(label, 14, actionColor, 0x44FFFFFF, true);
 
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(50), weight);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(keyHeightDp), weight);
         params.setMargins(dp(3), dp(4), dp(3), dp(4));
         key.setLayoutParams(params);
         return key;
