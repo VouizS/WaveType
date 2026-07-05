@@ -3,12 +3,12 @@ package com.sw.wavetype;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -17,12 +17,25 @@ public class MainActivity extends Activity {
         return (int) (value * getResources().getDisplayMetrics().density);
     }
 
-    private GradientDrawable rounded(int color, float radius) {
+    private GradientDrawable rounded(int color, float radius, int strokeColor) {
         GradientDrawable drawable = new GradientDrawable();
         drawable.setColor(color);
         drawable.setCornerRadius(dp(radius));
-        drawable.setStroke(dp(1), 0x33FFFFFF);
+        drawable.setStroke(dp(1), strokeColor);
         return drawable;
+    }
+
+    private TextView cardButton(String text, int color) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextColor(Color.WHITE);
+        view.setTextSize(15);
+        view.setGravity(Gravity.CENTER);
+        view.setTypeface(Typeface.DEFAULT_BOLD);
+        view.setBackground(rounded(color, 24, 0x33FFFFFF));
+        view.setClickable(true);
+        view.setPadding(dp(12), 0, dp(12), 0);
+        return view;
     }
 
     @Override
@@ -33,40 +46,40 @@ public class MainActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER);
         root.setPadding(dp(24), dp(24), dp(24), dp(24));
-        root.setBackgroundColor(Color.rgb(11, 15, 20));
+        root.setBackgroundColor(Color.rgb(8, 11, 16));
 
         TextView title = new TextView(this);
         title.setText("WaveType");
         title.setTextColor(Color.WHITE);
-        title.setTextSize(34);
+        title.setTextSize(36);
+        title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setGravity(Gravity.CENTER);
 
         TextView subtitle = new TextView(this);
-        subtitle.setText("Liquid Glass Keyboard\nv0.1 Foundation");
+        subtitle.setText("Liquid Glass Keyboard\nv0.1.1 First Polish");
         subtitle.setTextColor(0xCCFFFFFF);
         subtitle.setTextSize(16);
         subtitle.setGravity(Gravity.CENTER);
         subtitle.setPadding(0, dp(12), 0, dp(28));
 
-        Button enable = new Button(this);
-        enable.setText("Ativar WaveType nos teclados");
-        enable.setTextColor(Color.WHITE);
-        enable.setBackground(rounded(0x331E88E5, 24));
-        enable.setAllCaps(false);
+        TextView enable = cardButton("Ativar WaveType nos teclados", 0x332A7FFF);
         enable.setOnClickListener(v -> {
             Intent intent = new Intent(Settings.ACTION_INPUT_METHOD_SETTINGS);
             startActivity(intent);
         });
 
-        Button picker = new Button(this);
-        picker.setText("Escolher teclado atual");
-        picker.setTextColor(Color.WHITE);
-        picker.setBackground(rounded(0x3326C6DA, 24));
-        picker.setAllCaps(false);
+        TextView picker = cardButton("Escolher teclado atual", 0x3326C6DA);
         picker.setOnClickListener(v -> {
             InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             if (imm != null) imm.showInputMethodPicker();
         });
+
+        TextView info = new TextView(this);
+        info.setText("Base aprovada: teclado funcional, glass escuro, teclas arredondadas e fluxo APK automático.");
+        info.setTextColor(0x99FFFFFF);
+        info.setTextSize(13);
+        info.setGravity(Gravity.CENTER);
+        info.setPadding(dp(8), dp(22), dp(8), 0);
 
         LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -78,6 +91,7 @@ public class MainActivity extends Activity {
         root.addView(subtitle);
         root.addView(enable, buttonParams);
         root.addView(picker, buttonParams);
+        root.addView(info);
 
         setContentView(root);
     }
